@@ -1,0 +1,11 @@
+---
+title: "Model of Almond Yield Anomaly in Response to Climate Variation"
+output:
+  github_document:
+    toc: false
+---
+
+# Contents
+
+This repository (knitted HTML linked here: [almond_yield]()) implements a simple model of almond yield anomaly in response to climate variables.
+
