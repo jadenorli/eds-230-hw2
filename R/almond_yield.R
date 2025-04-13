@@ -1,15 +1,13 @@
 #' Almond Yield Anomaly 
 #' 
 #' computes the yearly almond yield anomaly given daily timeseries of daily minimum temperature and daily precipitation
-#' @param climate_data
-#' @param tmin_month
-#' @param precip_month
-#' @return 
-#' @export
-#' 
-#' @examples
+#' @param climate_data dataframe that contains day, month, year, daily minimum temperature (Celsius), and daily precipitation (mm)
+#' @param tmin_month the numerical month corresponding to the month that Lobell et al 2006 denoted for the mean minimum temperature in the transfer equation 
+#' @param precip_month the numerical month corresponding to the month that Lobell et al 2006 denoted for the total precipitation in the transfer equation 
+#' @author Jaden Orli
+#' @return climate_yield dataframe which contains the maximum yield anomaly (ton/acre), mean yield anaomaly (ton/acre), and minimum yield anomaly (ton/acre)
 
-#write a function to calculate the almond yield anamoly 
+#write a function to calculate the almond yield anomaly 
 almond_yield <- function(climate_df, tmin_month, precip_month){
   
   #create a dataframe with the monthly mean minimum temperature and monthly total precipitation 
@@ -56,3 +54,4 @@ almond_yield <- function(climate_df, tmin_month, precip_month){
   return(climate_yield)
   
 }
+
