@@ -1,0 +1,137 @@
+---
+title: "EDS_230_HW2_extra"
+format: html
+editor: visual
+---
+
+```{r}
+wine_grapes_yield <- crop_yield(climate_df = climate_data, crop = "wine_grapes", tmin_month = 4, precip_month1 = 6, precip_month2 = -9)
+
+#define the equation for wine grapes yield 
+wine_grapes_func <- function(tmin, precip) {
+  
+  yield <- 2.65*tmin - 0.17*(tmin)^2 + 4.78*precip - 4.93*(precip)^2 - 2.24*precip + 1.54*(precip)^2 - 10.50
+  
+  return(yield)
+  
+}
+
+```
+
+
+```{r}
+
+crop_yield <- function(climate_df, crop, tmin_month = NULL, tmax_month = NULL, precip_month1 = NULL, precip_month2 = NULL) {
+  
+  #create a dataframe with the monthly mean max temperature, mean min temperature, and mean precipitation 
+  climate_month <- climate_df %>% #start with the unprocessed climate dataframe
+    group_by(month, year) %>% #group the dataframe by month and year
+    summarise(tmin_mean = mean(tmin_c), #calculate the monthly mean min temp
+              tmax_mean = mean(tmax_c), #calculate the monthly mean max temp
+              precip_sum = sum(precip), #calculate the monthly mean precip 
+              .groups = "drop") #ungroup the dataframe 
+  
+  #create a dataframe for the monthly mean minimum temperatures from each year for the selected month (the tmin_month)
+    if (!is.null(tmin_month)) {
+      
+      if (tmin_month < 0 ) {
+        
+        month_abs <- abs(tmin_month)
+        
+        tmin_month_df <- climate_month %>% 
+        filter(month == month_abs) %>% 
+        mutate(year = year + 1) %>% 
+        select(year, tmin_mean) }
+      
+      else {
+        
+        tmin_month_df <- climate_month %>% 
+        filter(month == tmin_month) %>% 
+        mutate(year = year) %>% 
+        select(year, tmin_mean)
+        
+      }}
+    
+    #create a dataframe for the monthly mean minimum temperatures from each year for the selected month (the tmax_month)
+if (!is.null(tmax_month)) {
+      
+      if (tmax_month < 0 ) {
+        
+        month_abs <- abs(tmax_month)
+        
+        tmax_month_df <- climate_month %>% 
+        filter(month == month_abs) %>% 
+        mutate(year = year + 1) %>% 
+        select(year, tmax_mean) }
+      
+      else {
+        
+        tmax_month_df <- climate_month %>% 
+        filter(month == tmax_month) %>% 
+        mutate(year = year) %>% 
+        select(year, tmax_mean)
+        
+      }}
+  
+  #create a dataframe for the total monthly precipitation from each year for the selected month (the precip_month1)
+if (!is.null(precip_month1)) {
+      
+      if (precip_month1 < 0 ) {
+        
+        month_abs <- abs(precip_month1)
+        
+        precip_month1_df <- climate_month %>% 
+        filter(month == month_abs) %>% 
+        mutate(year = year + 1) %>% 
+        select(year, precip_sum) }
+      
+      else {
+        
+        precip_month1_df <- climate_month %>% 
+        filter(month == precip_month1) %>% 
+        mutate(year = year) %>% 
+        select(year, precip_sum)
+        
+      }}
+    
+  #create a dataframe for the total monthly precipitation from each year for the selected month (the precip_month2)
+if (!is.null(precip_month2)) {
+      
+      if (precip_month2 < 0 ) {
+        
+        month_abs <- abs(precip_month2)
+        
+        precip_month2_df <- climate_month %>% 
+        filter(month == month_abs) %>% 
+        mutate(year = year + 1) %>% 
+        select(year, precip_sum) }
+      
+      else {
+        
+        precip_month2_df <- climate_month %>% 
+        filter(month == precip_month2) %>% 
+        mutate(year = year) %>% 
+        select(year, precip_sum)
+        
+      }}
+
+    #combine the dataframes with the yearly means into one dataframe
+    climate_input <- cbind(tmin_month_df, tmax_month_df, precip_month1_df, precip_month2_df,
+                              by = "year") #join by year
+  
+  
+#create a dataframe with the yield anomaly in a new column 
+  climate_yield <- climate_input %>% 
+    mutate(yield_anomaly = switch(crop,
+                                  "wine grapes" = wine_grapes_func(tmin_mean, precip_sum),
+                                  "almonds" = almonds_func(tmin_mean, precip_sum),
+                                  "table grapes" = table_grapes_func(tmin_mean, precip_sum),
+                                  "oranges" = oranges_func(tmin_mean, precip_sum),
+                                  "walnuts" = walnuts_func(tmax_mean, precip_sum),
+                                  "avocados" = avocado_func(tmin_mean, tmax_mean, precip_sum))) 
+  
+  return(climate_yield)
+    
+   }
+```
+

@@ -1,0 +1,112 @@
+---
+title: "Almond Yield Anomaly"
+author: "Jaden Orli"
+date: last-modified
+bibliography: 
+ - ../Code/references.bib
+execute: 
+  eval: true
+  message: false
+  warning: false 
+format:
+  html:
+    theme: minty
+    css: custom.css
+    toc: true
+    toc-title: "Table of Contents:"
+    toc-depth: 3
+    code-fold: false
+editor:
+  chunk_output_type: inline
+embed-resources: true
+---
+
+# I. Background
+
+This document implements a simple model of almond yield anomaly in response to climate variables. The transfer function for this model is sourced from Lobell et al. 2006 which used data to build statistical models of tree crop yield for California that explored how climate variation (place and time) might influence yield [@lobell_2006]. The particular equation, shown below, used is from Table 2 listed under almonds for the crop type.
+
+$$
+Y = -0.015 \cdot T_{n2} - 0.0046 \cdot T_{n2}^2 - 0.07 \cdot P_{1} + 0.0043 \cdot P_{1}^2 + 0.28
+$$ 
+
+In this equation, $T_{n2}$ represents the monthly mean minimum temperature for the second month of the year (February). Similarly, $P_{1}$ refers to the total monthly precipitation for the first month of the year (January). Using this transfer function, we developed a [model](#functions) to calculate the maximum yield anomaly, mean yield anomaly, and minimum yield anomaly for almonds from the years 1988 to 2010.
+
+# II. Set Up
+
+## a) Load Libraries
+
+First, clear the environment and load the necessary libraries.
+
+```{r libraries}
+#this clears out the environment
+rm(list = ls())
+
+#load the necessary libraries 
+library(readr)
+library(here)
+library(tidyverse)
+library(kableExtra)
+
+```
+
+## b) Read Data {#data}
+
+Then we will read in the climate data text file as a dataframe.
+
+```{r data}
+#read in the climate data as a dataframe 
+climate_data <- read_delim(here("Data", "clim.txt")) 
+
+```
+
+## c) Load Functions {#functions}
+
+Now we can load the R file which contains the almond_yield function.
+
+```{r functions}
+#load in the almond_yield function
+source(here("R", "almond_yield.R"))
+
+```
+
+# III. Almond Yield Anomaly
+
+After loading all the necessary libraries, data, and functions we can use the [almond_yield](#function) function that we developed to analyze the [climate_data](#data).
+
+## a) Conceptual Model
+
+To help understand the almond_yield function, we developed a conceptual model to explain the processes that take place within this function. The schematic for the almond yield function is outlined below:
+
+![](images/Almond_Yield_Conceptual_Diagram.jpg)
+
+## b) Calculate Anomaly
+
+Finally, we can use the [almond_yield](#functions) model to calculate the yield anomalies from the years 1988 to 2010.
+
+```{r anomaly}
+#use the almond_yield function to calculate the anomalies summary
+almond_summary <- almond_yield(climate_df = climate_data, #use the climate_data as the input df
+                               tmin_month = 2, #the month Lobell et al 2006 use is 2 (Feb)
+                               precip_month = 1) #the month Lobell et al 2006 use is 1 (Jan)
+
+#save the almond_summary as a kable
+almond_kable <- kable(almond_summary,
+  col.names = c("Mean Yield", "Maximum Yield", "Minimum Yield"),
+  kable_title = htmltools::tags$div(style = "text-align: center; font-size: 20px;",
+                                    htmltools::tags$strong("Summary of Almond Yield Anomalies<br/><span style='font-size:16px;'>1988–2010</span>")),
+  escape = FALSE) %>%
+  kable_styling(full_width = FALSE, font_size = "0.8rem", position = "center") %>%
+  row_spec(0, bold = TRUE, background = "rgba(174, 209, 200, 0.4)") %>%
+  row_spec(1:nrow(almond_summary), align = "center") %>%
+  kable_classic(html_font = "Times New Roman")
+
+#view the kable 
+almond_kable
+
+
+```
+
+# IV. References
+
+::: {#refs}
+:::
