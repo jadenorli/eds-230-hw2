@@ -68,6 +68,8 @@ Now we can load the R file which contains the almond_yield function.
 #load in the almond_yield function
 source(here("R", "almond_yield.R"))
 
+#view the format of the function 
+almond_yield
 ```
 
 

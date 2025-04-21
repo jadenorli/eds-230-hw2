@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Jaden Orli">
-<meta name="dcterms.date" content="2025-04-13">
+<meta name="dcterms.date" content="2025-04-17">
 
 <title>Model of Almond Yield Anomaly in Response to Climate Variation</title>
 <style>
@@ -2855,18 +2855,54 @@ border: 0;
 
 <style type="text/css">
 
-body {
-font-family: "Times New Roman", Times, serif; 
+.title {
+font-family: "Times New Roman", Times, serif; font-size: 2.75rem;
+font-weight: bold;
+border-bottom: 0px;
+text-align: center;
+margin-bottom: 3.75rem;
 }
 
-h1, h2, h3, h4, h5, h6, h7 {
+body {
+font-size: 1.1rem;
+margin: 0;
 font-family: "Times New Roman", Times, serif;
 }
 
-h1.title {
-font-size: 40px;
+h1, .h1 {
+font-family: "Times New Roman", Times, serif;
+font-size: 2rem;
 font-weight: bold;
-text-align: center;
+border-bottom: 0.125rem solid #78c1ad; 
+}
+
+h2, .h2 {
+font-family: "Times New Roman", Times, serif;
+font-size: 1.8rem;
+background-color: rgba(174, 209, 200, 0.4) !important;
+border-radius: 0.4rem !important; padding: 0.5rem; 
+}
+
+h3, .h3 {
+font-family: "Times New Roman", Times, serif;
+font-size: 1.6rem;
+}
+
+h4, .h4 {
+font-family: "Times New Roman", Times, serif;
+font-size: 1.4rem;
+text-indent: 0.5rem;
+color: #78c1ad;
+margin-left: 1rem;
+}
+
+#toc-title {
+font-size: 1.05rem;
+font-weight: bold; text-indent: 0rem;
+}
+
+pre {
+background-color: rgba(174, 209, 200, 0.4) !important; 
 }
 
 pre code {
@@ -2922,7 +2958,7 @@ overflow-x: hidden !important;
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">April 13, 2025</p>
+      <p class="date">April 17, 2025</p>
     </div>
   </div>
   
@@ -2970,7 +3006,33 @@ Y = -0.015 \cdot T_{n2} - 0.0046 \cdot T_{n2}^2 - 0.07 \cdot P_{1} + 0.0043 \cdo
 <p>Now we can load the R file which contains the almond_yield function.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co">#load in the almond_yield function</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">&quot;R&quot;</span>, <span class="st">&quot;almond_yield.R&quot;</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">&quot;R&quot;</span>, <span class="st">&quot;almond_yield.R&quot;</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co">#view the format of the function </span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>almond_yield</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>function (climate_df, tmin_month, precip_month) 
+{
+    climate_month &lt;- climate_df %&gt;% group_by(month, year) %&gt;% 
+        summarise(tmin_mean = mean(tmin_c), precip_sum = sum(precip), 
+            .groups = &quot;drop&quot;)
+    tmin_month_df &lt;- climate_month %&gt;% filter(month == tmin_month) %&gt;% 
+        select(year, tmin_mean)
+    precip_month_df &lt;- climate_month %&gt;% filter(month == precip_month) %&gt;% 
+        select(year, precip_sum)
+    climate_input &lt;- inner_join(tmin_month_df, precip_month_df, 
+        by = &quot;year&quot;)
+    almond_yield_func &lt;- function(tmin, precip) {
+        yield &lt;- -0.015 * tmin - 0.0046 * (tmin)^2 - 0.07 * precip + 
+            0.0043 * (precip)^2 + 0.28
+        return(yield)
+    }
+    climate_yield &lt;- climate_input %&gt;% mutate(yield_anomaly = almond_yield_func(tmin_mean, 
+        precip_sum)) %&gt;% summarise(mean_yield = mean(yield_anomaly), 
+        max_yield = max(yield_anomaly), min_yield = min(yield_anomaly))
+    return(climate_yield)
+}</code></pre>
+</div>
 </div>
 </section>
 </section>
@@ -2986,30 +3048,30 @@ Y = -0.015 \cdot T_{n2} - 0.0046 \cdot T_{n2}^2 - 0.07 \cdot P_{1} + 0.0043 \cdo
 <h2 class="anchored" data-anchor-id="b-calculate-anomaly">b) Calculate Anomaly</h2>
 <p>Finally, we can use the <a href="#functions">almond_yield</a> model to calculate the maximum, mean, and minimum yield anomalies (ton/acre) from the years 1988 to 2010.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#use the almond_yield function to calculate the anomalies summary</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>almond_summary <span class="ot">&lt;-</span> <span class="fu">almond_yield</span>(<span class="at">climate_df =</span> climate_data, <span class="co">#use the climate_data as the input df</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">tmin_month =</span> <span class="dv">2</span>, <span class="co">#the month Lobell et al 2006 use is 2 (Feb)</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                               <span class="at">precip_month =</span> <span class="dv">1</span>) <span class="co">#the month Lobell et al 2006 use is 1 (Jan)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#use the almond_yield function to calculate the anomalies summary</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>almond_summary <span class="ot">&lt;-</span> <span class="fu">almond_yield</span>(<span class="at">climate_df =</span> climate_data, <span class="co">#use the climate_data as the input df</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                               <span class="at">tmin_month =</span> <span class="dv">2</span>, <span class="co">#the month Lobell et al 2006 use is 2 (Feb)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                               <span class="at">precip_month =</span> <span class="dv">1</span>) <span class="co">#the month Lobell et al 2006 use is 1 (Jan)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>And view the final outputs in a kable:</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#save the almond_summary as a kable</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>almond_kable <span class="ot">&lt;-</span> <span class="fu">kable</span>(almond_summary,</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;Mean Yield&quot;</span>, <span class="st">&quot;Maximum Yield&quot;</span>, <span class="st">&quot;Minimum Yield&quot;</span>),</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">div</span>(<span class="at">style =</span> <span class="st">&quot;text-align: center; font-size: 1rem;&quot;</span>,</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                                    htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">strong</span>(<span class="st">&quot;Summary of Almond Yield Anomalies&quot;</span>),</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                                    htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">br</span>(),</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                                    htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">span</span>(<span class="at">style =</span> <span class="st">&quot;font-size: 0.9rem;&quot;</span>, <span class="st">&quot;1988–2010&quot;</span>)), </span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">escape =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>, <span class="at">font_size =</span> <span class="st">&quot;0.8rem&quot;</span>, <span class="at">position =</span> <span class="st">&quot;center&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">row_spec</span>(<span class="dv">0</span>, <span class="at">bold =</span> <span class="cn">TRUE</span>, <span class="at">background =</span> <span class="st">&quot;rgba(174, 209, 200, 0.4)&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">row_spec</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(almond_summary), <span class="at">align =</span> <span class="st">&quot;center&quot;</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">html_font =</span> <span class="st">&quot;Times New Roman&quot;</span>)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="co">#view the kable </span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>almond_kable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#save the almond_summary as a kable</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>almond_kable <span class="ot">&lt;-</span> <span class="fu">kable</span>(almond_summary,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">&quot;Mean Yield&quot;</span>, <span class="st">&quot;Maximum Yield&quot;</span>, <span class="st">&quot;Minimum Yield&quot;</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">div</span>(<span class="at">style =</span> <span class="st">&quot;text-align: center; font-size: 1rem;&quot;</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                    htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">strong</span>(<span class="st">&quot;Summary of Almond Yield Anomalies&quot;</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                                    htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">br</span>(),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                                    htmltools<span class="sc">::</span>tags<span class="sc">$</span><span class="fu">span</span>(<span class="at">style =</span> <span class="st">&quot;font-size: 0.9rem;&quot;</span>, <span class="st">&quot;1988–2010&quot;</span>)), </span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">escape =</span> <span class="cn">FALSE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">full_width =</span> <span class="cn">FALSE</span>, <span class="at">font_size =</span> <span class="st">&quot;0.8rem&quot;</span>, <span class="at">position =</span> <span class="st">&quot;center&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">row_spec</span>(<span class="dv">0</span>, <span class="at">bold =</span> <span class="cn">TRUE</span>, <span class="at">background =</span> <span class="st">&quot;rgba(174, 209, 200, 0.4)&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">row_spec</span>(<span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(almond_summary), <span class="at">align =</span> <span class="st">&quot;center&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable_classic</span>(<span class="at">html_font =</span> <span class="st">&quot;Times New Roman&quot;</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#view the kable </span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>almond_kable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
 
